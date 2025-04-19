@@ -1,7 +1,7 @@
 const router = require("express").Router();
-const middlewareController = require("../controllers/middlewareController");
-const userController = require("../controllers/userController");
-
+const middlewareController = require("../Controller/middlewareController");
+const userController = require("../Controller/userController");
+const { createBot } = require("../Controller/userController");
 //UPDATE A USER
 router.put(
   "/:id",
@@ -35,5 +35,9 @@ router.put(
 
 //SEARCH FOR USERS
 router.get("/", middlewareController.verifyToken, userController.searchAllUser);
+
+
+// Route để thêm chatbot
+router.post("/create-bot", createBot);
 
 module.exports = router;

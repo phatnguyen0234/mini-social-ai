@@ -66,6 +66,7 @@ const userSchema = new mongoose.Schema(
       type: Array,
       default: [],
     },
+    isBot: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

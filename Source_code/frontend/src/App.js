@@ -15,6 +15,8 @@ import LeaderBoard from "./Components/LeaderBoard/LeaderBoard";
 import LandingPage from "./Components/LandingPage/LandingPage";
 import { useEffect } from "react";
 import DesktopLanding from "./Components/DesktopLanding/DesktopLanding";
+//import GeminiChat from "./GeminiChat";
+//import GeminiChat from "./Components/GeminiChat/GeminiChat"; // Import component GeminiChat
 
 function App() {
   const [windowSize, setWindowSize] = useState({
@@ -24,6 +26,18 @@ function App() {
   const [isMobile, setMobile] = useState(true);
   const [isEdit, setEdit] = useState(false);
   const [isOpenPost, setOpen] = useState(false);
+  
+  const userId = localStorage.getItem("userId");
+  const [showChat, setShowChat] = useState(false);
+
+  const handleToggleChat = () => {
+    if (!userId) {
+      alert("Bạn cần đăng nhập để chat với Gemini!");
+      return;
+    }
+    setShowChat(!showChat);
+  };
+
   useEffect(() => {
     const handleSize = () => {
       setWindowSize({
@@ -42,9 +56,11 @@ function App() {
       setMobile(true);
     }
   }, [windowSize]);
+
   return (
     <Router>
       <div className="App">
+
         <Routes>
           {isMobile ? (
             <>

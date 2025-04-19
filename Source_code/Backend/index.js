@@ -13,6 +13,7 @@ const userRoute = require("./routes/user");
 const newsRoute = require("./routes/news");
 const messageRoute = require("./routes/message");
 const conversationRoute = require("./routes/conversation");
+//const geminiRoutes = require("./Routes/geminiRoutes"); // Import route chatbot
 
 dotenv.config(".env");
 const DB_URL = process.env.MONGO_URI
@@ -21,6 +22,9 @@ const DB_URL = process.env.MONGO_URI
 mongoose.connect(DB_URL, () => {
   console.log("CONNECTED TO MONGO DB");
 });
+
+//app.use(express.json()); // Middleware để parse JSON
+//app.use("/api", geminiRoutes); // Kết nối route chatbot
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(
@@ -45,6 +49,7 @@ app.use("/v1/users", userRoute);
 app.use("/v1/news", newsRoute);
 app.use("/v1/conversation", conversationRoute);
 app.use("/v1/message", messageRoute);
+app.use("/api/users", userRoutes);
 
 app.listen(process.env.PORT || 8000, () => {
   console.log("Server is running");

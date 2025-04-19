@@ -140,4 +140,23 @@ const userController = {
   },
 };
 
+const createBot = async (req, res) => {
+  try {
+    const bot = new User({
+      _id: "gemini_bot", // ID duy nhất cho chatbot
+      name: "Gemini Bot",
+      email: "gemini@chatbot.com",
+      isBot: true, // Đánh dấu đây là bot
+    });
+
+    const savedBot = await bot.save();
+    res.status(201).json(savedBot);
+  } catch (err) {
+    console.error("Error creating bot:", err);
+    res.status(500).json({ error: "Failed to create bot" });
+  }
+};
+
+module.exports = { createBot };
+
 module.exports = userController;

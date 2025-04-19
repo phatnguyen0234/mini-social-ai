@@ -1,8 +1,8 @@
 const router = require("express").Router();
 const Post = require("../models/Post");
-const commentController = require("../controllers/commentController");
-const middlewareController = require("../controllers/middlewareController");
-const postController = require("../controllers/postController");
+const commentController = require("../Controller/commentController");
+const middlewareController = require("../Controller/middlewareController");
+const postController = require("../Controller/postController");
 const upload = require("../utils/multer");
 
 //CREATE A POST

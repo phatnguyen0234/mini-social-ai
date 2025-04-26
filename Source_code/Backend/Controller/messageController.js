@@ -1,5 +1,7 @@
+const axios = require("axios");
 const Message = require("../models/Message");
 const Conversation = require("../models/Conversation");
+
 const messageController = {
   createMessage: async (req, res) => {
     const newMsg = new Message(req.body);
@@ -14,23 +16,32 @@ const messageController = {
         }
       );
 
-      if (req.body.receiverId === "AI_Assistant") {
-        // Gửi câu hỏi đến API chatbot
+      if (req.body.receiverId === "gemini_bot") {
+        // Send the question to the Gemini API
         console.log("Gemini API URL:", process.env.GEMINI_API);
-        const botResponse = await axios.post(process.env.GEMINI_API, {
-          question: req.body.text,
-        });
+        const botResponse = await axios.post(
+          process.env.GEMINI_API,
+          {
+            question: req.body.text, // User's question
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.GEMINI_API_KEY}`, // Add your API key here
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-        // Lưu câu trả lời của chatbot vào cơ sở dữ liệu
+        // Save the chatbot's response to the database
         const botMessage = new Message({
           conversationId: req.body.conversationId,
-          senderId: "AI_Assistant",
+          senderId: "gemini_bot",
           receiverId: req.body.senderId,
-          text: botResponse.data.answer,
+          text: botResponse.data.answer, // Adjust based on Gemini's response format
         });
         await botMessage.save();
 
-        // Tăng số lượng tin nhắn trong conversation
+        // Increment the message count in the conversation
         await Conversation.findOneAndUpdate(
           {
             _id: req.body.conversationId,
@@ -43,10 +54,10 @@ const messageController = {
 
       res.status(200).json(savedMsg);
     } catch (err) {
+      console.error("Error creating message:", err);
       res.status(500).json(err);
     }
   },
-
 
   getMessage: async (req, res) => {
     try {
@@ -55,6 +66,7 @@ const messageController = {
       });
       res.status(200).json(messages);
     } catch (err) {
+      console.error("Error fetching messages:", err);
       res.status(500).json(err);
     }
   },

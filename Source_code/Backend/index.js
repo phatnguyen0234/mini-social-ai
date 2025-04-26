@@ -10,6 +10,8 @@ const cookieParser = require("cookie-parser");
 const authRoute = require("./routes/auth");
 const postRoute = require("./routes/post");
 const userRoute = require("./routes/user");
+console.log("User router: ", userRoute.stack.map(r => r.route?.path));
+
 const newsRoute = require("./routes/news");
 const messageRoute = require("./routes/message");
 const conversationRoute = require("./routes/conversation");
@@ -25,6 +27,7 @@ mongoose.connect(DB_URL, () => {
 
 //app.use(express.json()); // Middleware để parse JSON
 //app.use("/api", geminiRoutes); // Kết nối route chatbot
+app.use(express.json());
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(
@@ -49,7 +52,8 @@ app.use("/v1/users", userRoute);
 app.use("/v1/news", newsRoute);
 app.use("/v1/conversation", conversationRoute);
 app.use("/v1/message", messageRoute);
-app.use("/api/users", userRoutes);
+//.use(express.json());
+//app.use("/api/users", userRoute);
 
 app.listen(process.env.PORT || 8000, () => {
   console.log("Server is running");

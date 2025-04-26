@@ -12,3 +12,5 @@ module.exports = multer({
     cb(null, true);
   },
 });
+
+//const upload = multer({ storage });

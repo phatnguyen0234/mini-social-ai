@@ -4,6 +4,9 @@ var uniqueValidator = require("mongoose-unique-validator");
 
 const userSchema = new mongoose.Schema(
   {
+    _id: {
+      type: String,    //tự tạo nên đổi thành string
+    },
     username: {
       type: String,
       required: [true, "Required"],

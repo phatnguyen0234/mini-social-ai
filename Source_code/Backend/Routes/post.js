@@ -1,14 +1,22 @@
 const router = require("express").Router();
 const Post = require("../models/Post");
-const commentController = require("../Controller/commentController");
-const middlewareController = require("../Controller/middlewareController");
-const postController = require("../Controller/postController");
+const commentController = require("../controller/commentController");
+const middlewareController = require("../controller/middlewareController");
+const postController = require("../controller/postController");
 const upload = require("../utils/multer");
+
+//.log("upload.single:", upload.single);
+
+console.log("upload.single:", upload.single);
+console.log("middlewareController.verifyToken:", middlewareController.verifyToken);
+console.log("postController.createPost:", postController.createPost);
+console.log("postController.getFriendsPost:", postController.getFriendsPost);
+console.log("commentController.addComment:", commentController.addComment);
 
 //CREATE A POST
 router.post(
   "/",
-  upload.single("image"),
+ upload.single("image"),
   middlewareController.verifyToken,
   postController.createPost
 );

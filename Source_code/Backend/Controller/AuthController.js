@@ -8,7 +8,8 @@ const authController = {
     if (req.body.password.length > 7) {
       try {
         const salt = await bcrypt.genSalt(10);
-        const hashed = await bcrypt.hash(req.body.password, salt);
+        const hashed = await bcrypt.hash(req.body.password, salt); // hash password
+
 
         //Create new user
         const newUser = await new User({
@@ -21,7 +22,7 @@ const authController = {
         const user = await newUser.save();
         res.status(200).json(user);
       } catch (err) {
-        res.status(500).json(err.message);
+        res.status(500).json(err.message); // report errors 
       }
     }
     else {

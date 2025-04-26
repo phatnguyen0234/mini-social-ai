@@ -138,25 +138,45 @@ const userController = {
       return res.status(500).json(err);
     }
   },
+
+  createBot: async (req, res) => {
+    try {
+      const bot = new User({
+        _id: "gemini_bot", // ID duy nhất cho chatbot
+        name: "Gemini Bot",
+        password: "somehashedpassword",  // <-- thêm password (có thể hash nhẹ nhàng hoặc để đơn giản)
+        name: "Gemini Bot",
+      //email: "gemini@chatbot.com",
+        email: "gemini@chatbot.com",
+        isBot: true, // Đánh dấu đây là bot
+      });
+  
+      const savedBot = await bot.save();
+      res.status(201).json(savedBot);
+    } catch (err) {
+      console.error("Error creating bot:", err);
+      res.status(500).json({ error: "Failed to create bot" });
+    }
+  },
 };
 
-const createBot = async (req, res) => {
-  try {
-    const bot = new User({
-      _id: "gemini_bot", // ID duy nhất cho chatbot
-      name: "Gemini Bot",
-      email: "gemini@chatbot.com",
-      isBot: true, // Đánh dấu đây là bot
-    });
+// const createBot = async (req, res) => {
+//   try {
+//     const bot = new User({
+//       _id: "gemini_bot", // ID duy nhất cho chatbot
+//       name: "Gemini Bot",
+//       email: "gemini@chatbot.com",
+//       isBot: true, // Đánh dấu đây là bot
+//     });
 
-    const savedBot = await bot.save();
-    res.status(201).json(savedBot);
-  } catch (err) {
-    console.error("Error creating bot:", err);
-    res.status(500).json({ error: "Failed to create bot" });
-  }
-};
+//     const savedBot = await bot.save();
+//     res.status(201).json(savedBot);
+//   } catch (err) {
+//     console.error("Error creating bot:", err);
+//     res.status(500).json({ error: "Failed to create bot" });
+//   }
+// };
 
-module.exports = { createBot };
+//module.exports = { createBot };
 
 module.exports = userController;

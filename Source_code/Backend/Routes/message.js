@@ -1,6 +1,6 @@
 const router = require("express").Router();
-const middlewareController = require("../Controller/middlewareController");
-const messageController = require("../Controller/messageController");
+const middlewareController = require("../controller/middlewareController");
+const messageController = require("../controller/messageController");
 
 //CREATE A MESSAGE
 router.post(

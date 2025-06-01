@@ -6,6 +6,7 @@ const middlewareController = {
   verifyToken: (req, res, next) => {
     //ACCESS TOKEN FROM HEADER, REFRESH TOKEN FROM COOKIE
     const token = req.headers.token;
+    console.log("Token received:", token);
     if (token) {
       const accessToken = token.split(" ")[1];
       jwt.verify(accessToken, process.env.JWT_KEY, (err, user) => {
@@ -110,7 +111,6 @@ const middlewareController = {
       }
     };
   },
-  
 };
 
 module.exports = middlewareController;

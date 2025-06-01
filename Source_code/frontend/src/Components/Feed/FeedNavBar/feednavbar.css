@@ -1,16 +1,15 @@
 .feed-navbar{
-    display:flex;
+    display: flex;
     justify-content: space-around;
-    background-color: #222222;
+    background-color: #9575CD;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-
 }
 .feed-navbar > a{
     text-decoration: none;
-    color:white;
+    color: white;
 }
 .feed-navbar-selected{
-    border-bottom: 3px solid rgb(41, 128, 243);
+    border-bottom: 3px solid white;
     padding-bottom: 0.25rem;
 }

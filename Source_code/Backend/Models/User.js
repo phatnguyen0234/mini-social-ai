@@ -4,8 +4,12 @@ var uniqueValidator = require("mongoose-unique-validator");
 
 const userSchema = new mongoose.Schema(
   {
-    _id: {
-      type: String,    //tự tạo nên đổi thành string
+   // _id: {
+     // type: String,    // Auto-generated so changed to string
+   // },
+    createdAt: {
+      type: Date,
+      default: Date.now
     },
     username: {
       type: String,
@@ -14,6 +18,8 @@ const userSchema = new mongoose.Schema(
       maxlength: [20, "Must be less than 20 characters"],
       unique: true,
     },
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
     displayName: {
       type: String,
       default: "New User",
@@ -21,11 +27,14 @@ const userSchema = new mongoose.Schema(
     about: {
       type: String,
       default: "I'm a new user",
-    },
-    age: {
+    },    age: {
       type: Number,
-      minlength: 14,
-      default: 99,
+      default: function() {
+        // Calculate years since account creation
+        const now = new Date();
+        const created = this._id.getTimestamp();
+        return Math.floor((now - created) / (1000 * 60 * 60 * 24 * 365));
+      }
     },
     email: {
       type: String,
@@ -70,6 +79,14 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
     isBot: { type: Boolean, default: false },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
+    },
   },
   { timestamps: true }
 );

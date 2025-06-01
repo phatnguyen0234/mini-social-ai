@@ -12,6 +12,13 @@ const FeedLayout = ({ children }) => {
   const user = useSelector((state) => state.auth.login?.currentUser);
   const isOpen = useSelector((state) => state.nav.sidebar.open);
 
+  console.log("FeedLayout state:", {
+    isOpenPost,
+    openMsg,
+    user: user?._id,
+    isOpen,
+  });
+
   return (
     <>
       {user && (
@@ -45,7 +52,7 @@ const FeedLayout = ({ children }) => {
               }`}
             >
               <FeedHeader />
-              <ChatOverview/>
+              <ChatOverview />
             </section>
           )}
           <Footer />

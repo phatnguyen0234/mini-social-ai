@@ -2,23 +2,23 @@ import FeedLayout from "../Feed/Layout/FeedLayout";
 import "./leaderboard.css";
 import { FaTrophy } from "react-icons/fa";
 import { baseURL } from "../../utils/listContainer";
-import { RiCopperCoinLine } from "react-icons/ri";
 import useFetchData from "../Hooks/useFetchData";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Loading from "../Loading/Loading";
+
 const LeaderBoard = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user.user?.currentUser);
   const {
     apiData: users,
     isLoading,
-    serverError,
   } = useFetchData(
     `${baseURL}/users/${user?._id}/leaderboard`,
     user?.accessToken,
     "get"
   );
+
   const goToUser = (id) => {
     navigate(`/user/${id}`);
   };
@@ -65,13 +65,7 @@ const LeaderBoard = () => {
                     className="trophy-first"
                   />
                 )}
-
                 <div className="leaderboard-karmas">
-                  {/* <RiCopperCoinLine
-                    size={"24px"}
-                    color="rgb(2, 88, 158)"
-                    className="karmas-logo"
-                  /> */}
                   {user.karmas}
                 </div>
               </div>

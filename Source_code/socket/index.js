@@ -4,54 +4,76 @@ const socketio = require("socket.io");
 const cors = require("cors");
 const dotenv = require("dotenv");
 dotenv.config();
+
 const app = express();
 app.use(cors());
 const server = http.createServer(app);
-const io = socketio(server, {
+
+const io = socketio(8900, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000"],
+    methods: ["GET", "POST"],
+    credentials: true,
   },
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
+
 const PORT = process.env.PORT || 8000;
 
-let users = [];
+// Keep track of connected users
+let users = new Map();
 
 const addUser = (userId, socketId) => {
-  !users.some((user) => user.userId === userId) &&
-    users.push({ userId, socketId });
+  users.set(userId, socketId);
 };
 
 const removeUser = (socketId) => {
-  users = users.filter((user) => user.socketId !== socketId);
+  for (let [userId, id] of users.entries()) {
+    if (id === socketId) {
+      users.delete(userId);
+      break;
+    }
+  }
 };
 
 const getUser = (userId) => {
-  return users.find((user) => user.userId === userId);
+  return users.get(userId);
 };
 
 io.on("connection", (socket) => {
-  console.log("user connected");
+  console.log("User connected:", socket.id);
+
+  // Add new user
   socket.on("addUser", (userId) => {
-    addUser(userId, socket.id);
-    io.emit("getUsers", users);
+    if (userId) {
+      addUser(userId, socket.id);
+      io.emit("getUsers", Array.from(users.entries()));
+    }
   });
 
-  //send, get message
-  socket.on("sendMessage", ({ senderId, receiverId, text }) => {
-    console.log("users: " + users);
-    const user = getUser(receiverId);
-    console.log(user);
-    io.to(user?.socketId).emit("getMessage", {
-      senderId,
-      text,
-    });
+  // Handle messages
+  socket.on("sendMessage", async ({ senderId, receiverId, text }) => {
+    try {
+      const receiverSocketId = getUser(receiverId);
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("getMessage", {
+          senderId,
+          text,
+          timestamp: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   });
 
+  // Handle disconnection
   socket.on("disconnect", () => {
-    console.log("user disconnected");
+    console.log("User disconnected:", socket.id);
     removeUser(socket.id);
-    io.emit("getUsers", users);
+    io.emit("getUsers", Array.from(users.entries()));
   });
 });
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Socket server running on port ${PORT}`));

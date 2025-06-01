@@ -16,103 +16,122 @@ const ChatRoom = () => {
   const room = useSelector((state) => state.nav.message.room);
   const [messages, setMessage] = useState([]);
   const [newMsg, setNewMsg] = useState("");
-  const [receivedMsg, setReceivedMsg] = useState("");
+  const [receivedMsg, setReceivedMsg] = useState(null);
   const socket = useRef();
   const [partner, setPartner] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const navigate = useNavigate();
   const scrollRef = useRef();
   const { id } = useParams();
+  
   const axiosInstance = axios.create({
     headers: {
       token: `Bearer ${user?.accessToken}`,
     },
   });
 
-  const handleGoBack = () => {
-    navigate("/");
-    socket.current.disconnect();
-  };
+  // Initialize socket connection
   useEffect(() => {
     socket.current = io("https://reddat-socket.onrender.com", {
       transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
+
+    // Handle socket events
     socket.current.on("getMessage", (data) => {
       setReceivedMsg({
         sender: data.senderId,
         text: data.text,
+        conversationId: id,
         createdAt: Date.now(),
       });
     });
-  }, [socket]);
 
+    socket.current.on("connect", () => {
+      console.log("Socket connected");
+      socket.current.emit("addUser", user?._id);
+    });
+
+    socket.current.on("disconnect", () => {
+      console.log("Socket disconnected");
+    });
+
+    return () => {
+      socket.current.disconnect();
+    };
+  }, [user?._id]);
+
+  // Handle received messages
   useEffect(() => {
-    receivedMsg &&
-      room?.members.includes(receivedMsg.sender) &&
-      setMessage((prev) => [...prev, receivedMsg]);
+    if (receivedMsg && room?.members.includes(receivedMsg.sender)) {
+      setMessage((prevMessages) => [...prevMessages, receivedMsg]);
+      // Reset receivedMsg to prevent duplicate additions
+      setReceivedMsg(null);
+    }
   }, [receivedMsg, room]);
 
-  useEffect(() => {
-    socket.current.emit("addUser", user?._id);
-    socket.current.on("getUsers", (users) => {
-      setOnlineUsers(users);
-    });
-  }, [user]);
-
+  // Fetch messages and partner info
   useEffect(() => {
     const getMessage = async () => {
       try {
         const partnerId = room?.members.find((m) => m !== user?._id);
-        axios
-          .all([
-            axiosInstance.get(`${baseURL}/users/${partnerId}`),
-            axiosInstance.get(`${baseURL}/message/${room._id}`),
-          ])
-          .then(
-            axios.spread((partnerRes, msgRes) => {
-              setPartner(partnerRes.data);
-              setMessage(msgRes.data);
-            })
-          )
-          .catch((err) => {
-            console.log(err);
-          });
+        const [partnerRes, msgRes] = await Promise.all([
+          axiosInstance.get(`${baseURL}/users/${partnerId}`),
+          axiosInstance.get(`${baseURL}/message/${room._id}`),
+        ]);
+        setPartner(partnerRes.data);
+        setMessage(msgRes.data);
       } catch (e) {
-        console.log(e);
+        console.error("Error fetching messages:", e);
       }
     };
-    getMessage();
-  }, [room]);
+
+    if (room?._id) {
+      getMessage();
+    }
+  }, [room?._id, user?._id]);
+  const handleGoBack = () => {
+    socket.current.disconnect();
+    navigate(-1); // Go back to previous page
+  };
 
   const submitMessage = async () => {
-    const message = {
+    if (newMsg.trim().length === 0) return;
+
+    const messageData = {
       sender: user?._id,
       text: newMsg,
       conversationId: id,
     };
-    if (newMsg.length === 0) {
-      console.log("Empty msg");
-    } else {
-      const receiverId = partner?._id;
+
+    const receiverId = partner?._id;
+    
+    try {
+      // Send message to socket server first
       socket.current.emit("sendMessage", {
         senderId: user._id,
         receiverId,
         text: newMsg,
       });
-      try {
-        const res = await axios.post(`${baseURL}/message`, message, {
-          headers: { token: `Bearer ${user.accessToken}` },
-        });
-        setMessage([...messages, res.data]);
-        setNewMsg("");
-      } catch (err) {
-        console.log(err);
-      }
+
+      // Then save to database
+      const res = await axios.post(`${baseURL}/message`, messageData, {
+        headers: { token: `Bearer ${user.accessToken}` },
+      });
+
+      // Update local state with the new message
+      setMessage((prev) => [...prev, res.data]);
+      setNewMsg("");
+    } catch (err) {
+      console.error("Error sending message:", err);
     }
   };
 
+  // Scroll to bottom on new messages
   useEffect(() => {
-    scrollRef?.current?.scrollIntoView({ behavior: "smooth" });
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   return (
     <section className="convo-container">

@@ -176,3 +176,34 @@
   );
   color: white;
 }
+.preview-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0.5rem;
+}
+
+.preview-username {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.preview-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #a1a1a1;
+  font-size: 0.9rem;
+}
+
+.preview-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.preview-time {
+  font-size: 0.8rem;
+  color: #888;
+}

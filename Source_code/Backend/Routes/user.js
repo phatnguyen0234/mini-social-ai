@@ -1,6 +1,6 @@
 const router = require("express").Router();
-const middlewareController = require("../controller/middlewareController");
-const userController = require("../controller/userController");
+const middlewareController = require("../Controller/middlewareController");
+const userController = require("../Controller/userController");
 //const { createBot } = require("../controller/userController");
 
 
@@ -38,8 +38,6 @@ router.put(
 //SEARCH FOR USERS
 router.get("/", middlewareController.verifyToken, userController.searchAllUser);
 
-// Route to create the chatbot
-router.post("/create-bot", userController.createBot);
 
 router.get("/test", (req, res) => {
   res.send("User router OK");

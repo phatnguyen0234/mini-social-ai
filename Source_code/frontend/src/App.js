@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import "./App.css";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import UserProfile from "./Components/UserProfile/UserProfile";
 import Login from "./Components/Auth/Login";
 import Register from "./Components/Auth/Register";
+import ResetPassword from "./Components/Auth/ResetPassword";
+import Welcome from "./Components/Auth/Welcome";
 import HomePage from "./Components/Feed/HomePage/HomePage";
 import RequireAuth from "./Components/RequireAuth/RequireAuth";
 import News from "./Components/Feed/News/News";
@@ -15,8 +17,6 @@ import LeaderBoard from "./Components/LeaderBoard/LeaderBoard";
 import LandingPage from "./Components/LandingPage/LandingPage";
 import { useEffect } from "react";
 import DesktopLanding from "./Components/DesktopLanding/DesktopLanding";
-//import GeminiChat from "./GeminiChat";
-//import GeminiChat from "./Components/GeminiChat/GeminiChat"; // Import component GeminiChat
 
 function App() {
   const [windowSize, setWindowSize] = useState({
@@ -28,15 +28,7 @@ function App() {
   const [isOpenPost, setOpen] = useState(false);
   
   const userId = localStorage.getItem("userId");
-  const [showChat, setShowChat] = useState(false);
-
-  const handleToggleChat = () => {
-    if (!userId) {
-      alert("Bạn cần đăng nhập để chat với Gemini!");
-      return;
-    }
-    setShowChat(!showChat);
-  };
+  const user = useSelector((state) => state.auth.login?.currentUser);
 
   useEffect(() => {
     const handleSize = () => {
@@ -49,6 +41,7 @@ function App() {
     handleSize();
     return () => window.removeEventListener("resize", handleSize);
   }, []);
+
   useEffect(() => {
     if (windowSize.width > 500) {
       setMobile(false);
@@ -60,70 +53,66 @@ function App() {
   return (
     <Router>
       <div className="App">
-
         <Routes>
-          {isMobile ? (
-            <>
-              <Route path="/landingpage" element={<LandingPage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route
-                path="/"
-                element={
-                  <RequireAuth>
-                    <HomePage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/news"
-                element={
-                  <RequireAuth>
-                    <News />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/friends"
-                element={
-                  <RequireAuth>
-                    <Friends />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/leaderboard"
-                element={
-                  <RequireAuth>
-                    <LeaderBoard />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/chat/:id"
-                element={
-                  <RequireAuth>
-                    <ChatRoom />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/user/:id"
-                element={
-                  <RequireAuth>
-                    <UserProfile
-                      isEdit={isEdit}
-                      setEdit={setEdit}
-                      isOpenPost={isOpenPost}
-                      setOpen={setOpen}
-                    />
-                  </RequireAuth>
-                }
-              />
-            </>
-          ) : (
-            <Route path="/landingpage" element={<DesktopLanding />} />
-          )}
+          <Route path="/" element={user ? <Navigate to="/home" /> : <Navigate to="/landingpage" />} />
+          <Route path="/landingpage" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route 
+            path="/user/:id" 
+            element={
+              <RequireAuth>
+                <UserProfile
+                  isEdit={isEdit}
+                  setEdit={setEdit} 
+                  isOpenPost={isOpenPost}
+                  setOpen={setOpen}
+                />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/chat/:id"
+            element={
+              <RequireAuth>
+                <ChatRoom />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/home"
+            element={
+              <RequireAuth>
+                <HomePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/news"
+            element={
+              <RequireAuth>
+                <News />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/friends"
+            element={
+              <RequireAuth>
+                <Friends />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/leaderboard"
+            element={
+              <RequireAuth>
+                <LeaderBoard />
+              </RequireAuth>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
     </Router>

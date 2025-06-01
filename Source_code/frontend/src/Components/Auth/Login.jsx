@@ -1,74 +1,101 @@
-import { useEffect } from "react";
-import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../../redux/apiRequests";
-import InputField from "../InputFields/Input";
-import Loading from "../Loading/Loading";
+import { resetLoginError } from "../../redux/authSlice";
 import "./login.css";
 
 const Login = () => {
-  const user = useSelector((state) => state.auth.login?.currentUser);
-  const error = useSelector((state) => state.auth.login?.message);
-  const loading = useSelector((state) => state.auth.login?.isFetching);
-  const [username, setUsername] = useState("username");
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const newUser = {
-      username: username,
-      password: password,
-    };
-    loginUser(newUser, dispatch, navigate);
-  };
+  const loginError = useSelector(state => state.auth.login?.error);
+  const loginMessage = useSelector(state => state.auth.login?.message);
+  const isLoading = useSelector(state => state.auth.login?.isFetching);
+
   useEffect(() => {
-    if (user) {
-      navigate("/");
+    // Clear previous login state when component mounts
+    dispatch(resetLoginError());
+    
+    // Clear when unmounting
+    return () => {
+      dispatch(resetLoginError());
+    };
+  }, []); // Empty dependency array means this runs once on mount
+
+  useEffect(() => {
+    if (loginError) {
+      setIsSubmitting(false);
     }
-  }, []);
+  }, [loginError]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    const user = {
+      email: email,
+      password: password
+    };
+
+    await loginUser(user, dispatch, navigate);
+  };
+
   return (
-    <section className="login-container">
-      <div className="login-title"> Log in </div>
-      <div className="login-input">
-        <form onSubmit={handleLogin}>
-          <InputField
-            data={username}
-            type="text"
-            placeholder="Enter username"
-            setData={setUsername}
-            label="USERNAME"
-            classStyle="login-username"
-          />
-          <InputField
-            data={password}
-            type="password"
-            placeholder="Enter password"
-            setData={setPassword}
-            label="PASSWORD"
-            classStyle="login-password"
-          />
-          {loading ? (
-            <button type="submit">
-              <Loading
-                loadingType="ClipLoader"
-                color="white"
-                loading={loading}
-                size="36px"
-              />
-            </button>
-          ) : (
-            <button type="submit"> Continue </button>
+    <div className="login-container">
+      <div className="login-content">
+        <h1 className="login-title">Reddat</h1>
+        <span className="beta-tag">BETA</span>
+        <p className="login-subtitle">Sign In</p>
+
+        <form className="login-form" onSubmit={handleLogin}>
+          <div className="form-group">
+            <label>EMAIL</label>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>PASSWORD</label>
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="login-button"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Signing in..." : "Sign In"}
+          </button>
+
+          {loginError && loginMessage && (
+            <div className="login-error">{loginMessage}</div>
           )}
+
+          <div className="register-link">
+            Don't have an account?
+            <Link to="/register" className="register-link-text">
+              Sign Up
+            </Link>
+          </div>
         </form>
-        {error && <p className="loginError"> {error} </p>}
-        <div className="login-register"> Don't have an account yet? </div>
-        <Link className="login-register-link" to="/register">
-          Register now
-        </Link>
       </div>
-    </section>
+    </div>
   );
 };
 

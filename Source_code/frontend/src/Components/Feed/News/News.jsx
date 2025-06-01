@@ -7,8 +7,7 @@ import NewsList from "./NewsList";
 import "./news.css";
 import { baseURL } from "../../../utils/listContainer";
 
-const News = () => {
-  const user = useSelector((state) => state.user.user?.currentUser);
+const News = () => {  const user = useSelector((state) => state.auth.login?.currentUser);
   const { isLoading, apiData, serverError } = useFetchData(
     `${baseURL}/news`,
     user?.accessToken,

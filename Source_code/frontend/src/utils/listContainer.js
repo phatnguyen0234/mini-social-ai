@@ -1,6 +1,7 @@
-export const listContainer = {
-  routes: [
-    { name: "Home", path: "/" },
+export const baseURL = "http://localhost:8000/v1";
+
+export const listContainer = {  routes: [
+    { name: "Home", path: "/home" },
     { name: "News", path: "/news" },
     { name: "Friends", path: "/friends" },
   ],
@@ -17,6 +18,4 @@ export const listContainer = {
     "https://preview.redd.it/26s9eejm8vz51.png?auto=webp&s=e38d32ee0ffa0666fade2abd62ed59037c119990",
   ],
 };
-
-export const  baseURL = "https://reddat.onrender.com/v1";
 

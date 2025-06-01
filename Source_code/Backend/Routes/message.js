@@ -1,6 +1,6 @@
 const router = require("express").Router();
-const middlewareController = require("../controller/middlewareController");
-const messageController = require("../controller/messageController");
+const middlewareController = require("../Controller/middlewareController");
+const messageController = require("../Controller/messageController");
 
 //CREATE A MESSAGE
 router.post(
@@ -16,4 +16,13 @@ router.get(
   messageController.getMessage
 );
 
+//POST API to send to gemini
+router.post(
+  "/send",
+//  middlewareController.verifyToken,
+  messageController.sendMessage
+);
+
 module.exports = router;
+
+

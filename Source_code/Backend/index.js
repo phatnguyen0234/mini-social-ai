@@ -7,54 +7,66 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 var bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const authRoute = require("./routes/auth");
-const postRoute = require("./routes/post");
-const userRoute = require("./routes/user");
-console.log("User router: ", userRoute.stack.map(r => r.route?.path));
-
-const newsRoute = require("./routes/news");
-const messageRoute = require("./routes/message");
-const conversationRoute = require("./routes/conversation");
+const authRoute = require("./Routes/auth");
+const postRoute = require("./Routes/post");
+const userRoute = require("./Routes/user");
+const newsRoute = require("./Routes/news");
+const messageRoute = require("./Routes/message");
+const conversationRoute = require("./Routes/conversation");
 //const geminiRoutes = require("./Routes/geminiRoutes"); // Import route chatbot
 
-dotenv.config(".env");
-const DB_URL = process.env.MONGO_URI
-// const DB_URL = "mongodb://127.0.0.1:27017/mydb"
-// console.log("########################################", DB_URL)
-mongoose.connect(DB_URL, () => {
-  console.log("CONNECTED TO MONGO DB");
-});
+dotenv.config();
 
-//app.use(express.json()); // Middleware để parse JSON
-//app.use("/api", geminiRoutes); // Kết nối route chatbot
-app.use(express.json());
+// CORS configuration
+app.use(cors({
+  origin: 'http://localhost:3000', // Frontend URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'token', 'Origin', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
+}));
 
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(
-  bodyParser.urlencoded({
-    limit: "50mb",
-    extended: true,
-    parameterLimit: 50000,
-  })
-);
-app.use(cors());
+// Middleware
+app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
-app.use(helmet());
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({
+  limit: "50mb",
+  extended: true,
+  parameterLimit: 50000,
+}));
+
+// Security
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
 app.use(morgan("common"));
 
-//Routes
-app.get("/v1/", (req,res)=>{
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/mydb", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => {
+  console.log("Connected to MongoDB");
+}).catch((err) => {
+  console.error("MongoDB connection error:", err);
+});
+
+// Routes
+app.get("/v1/", (req, res) => {
   res.send("Hello world");
-})
+});
+
 app.use("/v1/auth", authRoute);
 app.use("/v1/post", postRoute);
 app.use("/v1/users", userRoute);
+app.use("/v1/message", messageRoute);
 app.use("/v1/news", newsRoute);
 app.use("/v1/conversation", conversationRoute);
-app.use("/v1/message", messageRoute);
-//.use(express.json());
-//app.use("/api/users", userRoute);
 
-app.listen(process.env.PORT || 8000, () => {
-  console.log("Server is running");
+const PORT = process.env.PORT || 8000;
+
+// Listen on all interfaces on port 8000
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
 });

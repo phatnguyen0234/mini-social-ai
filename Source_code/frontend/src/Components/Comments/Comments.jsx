@@ -22,6 +22,7 @@ const Comments = (props) => {
     theme,
     createdAt,
     updatedAt,
+    onCommentDeleted,
   } = props;
 
   const goToProfile = (userId) => {
@@ -39,7 +40,12 @@ const Comments = (props) => {
       ownerId,
       setDeleteComment,
       deleteComment
-    );
+    ).then(() => {
+      // Call onCommentDeleted after successful deletion
+      if (onCommentDeleted) {
+        onCommentDeleted();
+      }
+    });
   };
   const closePopup = () => {
     setOpen(false);

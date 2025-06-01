@@ -55,16 +55,48 @@ import {
 } from "./commentSlice";
 
 //AUTH
-export const loginUser = async (user, dispatch, navigate, state) => {
-  dispatch(loginStart());
-  dispatch(updateStart());
+export const loginUser = async (user, dispatch, navigate) => {
+  dispatch(loginStart()); // This already resets error state
   try {
-    const res = await axios.post(`${baseURL}/auth/login`, user);
-    dispatch(loginSuccess(res.data));
-    dispatch(updateSuccess(res.data));
-    navigate(state?.path || "/");
-  } catch (e) {
-    dispatch(loginFailed(e.response.data.message));
+    const res = await axios.post(`${baseURL}/auth/login`, user, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000,
+      withCredentials: true
+    });
+
+    if (res.data) {
+      dispatch(loginSuccess(res.data));
+      dispatch(updateSuccess(res.data));
+      localStorage.setItem("userId", res.data._id);
+      navigate("/home");
+    }
+  } catch (err) {
+    let errorMessage = "Login failed. Please try again.";
+    
+    if (err.response?.data?.message) {
+      const serverMessage = err.response.data.message;
+      if (serverMessage === "Incorrect username" || serverMessage === "User not found") {
+        errorMessage = "Email not found";
+      } else if (serverMessage === "Incorrect password") {
+        errorMessage = "Incorrect password";
+      } else {
+        errorMessage = serverMessage;
+      }
+    } else if (err.code === 'ECONNABORTED') {
+      errorMessage = "Request timed out. Please try again.";
+    } else if (!err.response) {
+      errorMessage = "Network error. Please check your connection.";
+    }
+    
+    console.error("Login error details:", {
+      error: err,
+      response: err.response,
+      message: errorMessage
+    });
+    
+    dispatch(loginFailed(errorMessage));
     dispatch(updateError());
   }
 };
@@ -72,26 +104,115 @@ export const loginUser = async (user, dispatch, navigate, state) => {
 export const registerUser = async (user, dispatch, navigate) => {
   dispatch(registerStart());
   try {
-    await axios.post(`${baseURL}/auth/register`, user);
-    dispatch(registerSuccess());
-    navigate("/login");
+    const fullUrl = `${baseURL}/auth/register`;
+    console.log("=== DEBUG REGISTER ===");
+    console.log("1. Full URL:", fullUrl);
+    console.log("2. Request Data:", user);
+
+    const res = await axios({
+      method: 'post',
+      url: fullUrl,
+      data: {
+        username: user.username,
+        email: user.email,
+        password: user.password
+      },
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000
+    });
+    
+    console.log("4. Server Response:", res.data);
+    
+    if (res.data?.message === "User created successfully") {
+      dispatch(registerSuccess("Registration successful! You can login now."));
+    } else {
+      const errorMsg = res.data?.message || "Registration failed. Please try again.";
+      console.log("5. Error from success block:", errorMsg);
+      dispatch(registerFailed(errorMsg));
+    }
   } catch (err) {
-    console.log(err.response.data);
-    dispatch(registerFailed(err.response.data));
+    console.log("=== DEBUG ERROR ===");
+    console.log("1. Error Response:", err.response?.data);
+    console.log("2. Error Status:", err.response?.status);
+
+    let errorMessage = "Registration failed. Please try again.";
+    
+    if (err.response?.data?.message) {
+      const serverMessage = err.response.data.message;
+      
+      if (serverMessage === "Username already exists") {
+        errorMessage = `Username "${user.username}" already exists. Please choose another username.`;
+      } 
+      else if (serverMessage === "Email already exists") {
+        errorMessage = `Email "${user.email}" is already in use. Please:\n- Use another email, or\n- Login if this is your email.`;
+      }
+      else if (serverMessage === "Email, username and password are required") {
+        errorMessage = "Please fill in all required fields (email, username and password).";
+      }
+      else if (serverMessage === "Password must be at least 8 characters") {
+        errorMessage = "Password must be at least 8 characters long.";
+      }
+      else {
+        errorMessage = serverMessage;
+      }
+    }
+    else if (err.code === 'ECONNABORTED') {
+      errorMessage = "Could not connect to server. Please try again later.";
+    }
+    else if (!err.response) {
+      errorMessage = "Could not connect to server. Please check your internet connection.";
+    }
+    
+    console.log("5. Final Error Message:", errorMessage);
+    dispatch(registerFailed(errorMessage));
   }
 };
 
 export const logOutUser = async (dispatch, token, userId, navigate) => {
   dispatch(logoutStart());
+  dispatch({ type: "auth/registerReset" }); // Reset registration state on logout
   try {
-    await axios.post(`${baseURL}/auth/logout`, userId, {
-      headers: { token: `Bearer ${token}` },
-    });
+    // Try to refresh token before logout
+    try {
+      const refreshRes = await axios.post(`${baseURL}/auth/refresh`, {}, {
+        withCredentials: true  // To send cookies
+      });
+      if (refreshRes.data?.accessToken) {
+        token = refreshRes.data.accessToken;
+      }
+    } catch (refreshErr) {
+      console.log("Refresh token failed:", refreshErr);
+    }
+
+    // Try logout with new or old token
+    try {
+      await axios.post(
+        `${baseURL}/auth/logout`,
+        { userId },
+        {
+          headers: { 
+            token: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          withCredentials: true  // To send and receive cookies
+        }
+      );
+    } catch (logoutErr) {
+      console.log("Logout API failed:", logoutErr);
+    }
+
+    // Always clear local storage and redirect
     dispatch(logoutSuccess());
     localStorage.clear();
     navigate("/login");
   } catch (err) {
-    dispatch(logoutFailed());
+    console.error("Final logout error:", err);
+    // Still clear local storage and redirect in case of error
+    dispatch(logoutSuccess());
+    localStorage.clear();
+    navigate("/login");
   }
 };
 
@@ -273,12 +394,18 @@ export const downvotePost = async (dispatch, token, id, userId) => {
 export const addComment = async (dispatch, token, id, comment) => {
   dispatch(addCommentStart());
   try {
-    await axios.post(`${baseURL}/post/comment/${id}`, comment, {
+    const res = await axios.post(`${baseURL}/post/comment/${id}`, comment, {
       headers: { token: `Bearer ${token}` },
     });
-    dispatch(addCommentSuccess());
+    dispatch(addCommentSuccess(res.data));
+    // Fetch updated comments
+    await getUserComment(dispatch, token, id);
+    // Also fetch the updated post to get the new comment count
+    await getOnePost(dispatch, token, id);
+    return res.data;
   } catch (err) {
     dispatch(addCommentFailed());
+    throw err;
   }
 };
 
@@ -298,7 +425,12 @@ export const deleteUserComment = async (
     });
     setDeletedCommentId([...comment, id]);
     dispatch(deleteCommentSuccess());
+    // Fetch the updated post to get the new comment count
+    if (comment.postId) {
+      await getOnePost(dispatch, token, comment.postId);
+    }
   } catch (err) {
     dispatch(deleteCommentFailed());
+    throw err;
   }
 };

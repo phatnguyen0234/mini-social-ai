@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { baseURL } from "../../../utils/listContainer";
-import { AiOutlineMessage, AiOutlineHome } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { messageToggle, sideBarToggle } from "../../../redux/navigateSlice";
 import InputField from "../../InputFields/Input";
@@ -18,8 +17,7 @@ const FeedHeader = () => {
   const [openSearch, setOpenSearch] = useState(false);
   const setOpen = () => {
     dispatch(sideBarToggle(true));
-  };
-  const goToProfile = (id) => {
+  };  const goToProfile = (id) => {
     navigate("/user/" + id);
   };
   const searchUsername = async () => {
@@ -35,12 +33,17 @@ const FeedHeader = () => {
         }
       });
   };
-
   const handleOpenMsg = () => {
+    console.log("handleOpenMsg called, current openMsg:", openMsg);
     dispatch(messageToggle(true));
   };
+
   const handleCloseMsg = () => {
+    console.log("handleCloseMsg called, current openMsg:", openMsg); 
     dispatch(messageToggle(false));
+    if (user?._id) {
+      navigate("/user/" + user._id);
+    }
   };
   useEffect(() => {
     if (search === "") {
@@ -53,7 +56,7 @@ const FeedHeader = () => {
   return (
     <header className="feed-logo">
       <img
-        onClick={() => setOpen(true)}
+        onClick={() => user?._id && goToProfile(user._id)}
         className="feed-logo-img"
         src={user?.profilePicture}
         alt=""
@@ -72,33 +75,22 @@ const FeedHeader = () => {
                 <div
                   className="user-container"
                   onClick={() => goToProfile(username._id)}
-                >
-                  <img
-                    style={{ backgroundColor: `${username.theme}` }}
+                >                  <img
+                    style={{ backgroundColor: `${username.theme || '#6A1B9A'}` }}
                     src={username.profilePicture}
                     alt="profile pic"
                     className="username-profile"
                   />
-                  <div className="username"> u/{username.username}</div>
+                  <div className="username-info">
+                    <div className="username">u/{username.username}</div>
+                    {username.age && <div className="user-age">{username.age} years old</div>}
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
       </div>
-      {openMsg ? (
-        <AiOutlineHome
-          size="24px"
-          className="message-outline"
-          onClick={() => handleCloseMsg()}
-        />
-      ) : (
-        <AiOutlineMessage
-          size="24px"
-          className="message-outline"
-          onClick={() => handleOpenMsg()}
-        />
-      )}
     </header>
   );
 };

@@ -1,6 +1,5 @@
-import { useDispatch } from "react-redux";
-import { setDelete } from "../../redux/navigateSlice";
 import "./overlay.css";
+
 const Overlay = ({ children }) => {
   return (
     <section className="popups-overlay">

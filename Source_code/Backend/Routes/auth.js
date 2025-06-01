@@ -5,10 +5,19 @@ const middlewareController = require("../Controller/middlewareController");
 //REGISTER
 router.post("/register", authController.registerUser);
 
+//LOGIN
+router.post("/login", authController.loginUser);
+
+//RESET PASSWORD REQUEST
+router.post("/reset-password", authController.requestPasswordReset);
+
+//RESET PASSWORD WITH TOKEN 
+router.post("/reset-password/:token", authController.resetPassword);
+
+//LOGOUT
+router.post("/logout", authController.logOut);
+
 //REFRESH TOKEN
 router.post("/refresh", authController.requestRefreshToken);
-//LOG IN
-router.post("/login", authController.loginUser);
-//LOG OUT
-router.post("/logout", middlewareController.verifyToken, authController.logOut);
+
 module.exports = router;

@@ -1,81 +1,59 @@
 import "./chatroom.css";
 import axios from "axios";
-import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import Conversation from "./Conversation";
-import { baseURL } from "../../utils/listContainer";
-import { setRoom } from "../../redux/navigateSlice";
 import Loading from "../Loading/Loading";
+import { useNavigate } from "react-router-dom";
+import { AiOutlineHome } from "react-icons/ai";
+
 const ChatOverview = () => {
-  //dummy data
-  const [conversation, setConversations] = useState([]);
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const [isLoading, setLoading] = useState(false);
-  let filteredConversation = [];
-  //io("ws://localhost:8900")
+  const [conversations, setConversations] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const user = useSelector((state) => state.user.user?.currentUser);
-  const axiosInstance = axios.create({
-    headers: {
-      token: `Bearer ${user?.accessToken}`,
-    },
-  });
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const getConversation = async () => {
-      setLoading(true);
+    const fetchConversations = async () => {
+      setIsLoading(true);
       try {
-        const res = await axios.get(`${baseURL}/conversation/` + user?._id, {
-          headers: { token: `Bearer ${user?.accessToken}` },
+        const res = await axios.get(`/conversation/${user?._id}`, {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+          },
         });
-        setLoading(false);
-        filteredConversation = res.data.filter((c) => c.messageCount > 0);
-        setConversations(filteredConversation);
-      } catch (e) {
-        setLoading(false);
+        setConversations(res.data);
+      } catch (err) {
+        console.error("Error fetching conversations:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
-    getConversation();
-  }, []);
 
-  const openConversation = (conversation) => {
-    dispatch(setRoom(conversation));
-    navigate("/chat/" + conversation._id);
+    if (user?._id) {
+      fetchConversations();
+    }
+  }, [user?._id]);
+
+  const handleBackToHome = () => {
+    navigate("/"); // Điều hướng về trang chủ
   };
+
   return (
     <section className="message-container">
       <ul className="contact-list">
-        <li> Chats </li>
+        <li>Chats</li>
       </ul>
       <div className="contact-container-div">
         {isLoading ? (
-          <Loading
-            loadingType="ClipLoader"
-            color="white"
-            size="32px"
-            loading={isLoading}
-          />
+          <Loading loadingType="ClipLoader" color="white" size="32px" loading={isLoading} />
         ) : (
-          <>
-            {conversation.map((conversation) => {
-              return (
-                <div
-                  className="conversation-container"
-                  onClick={() => openConversation(conversation)}
-                >
-                  <Conversation
-                    key={conversation._id}
-                    conversation={conversation}
-                    currentUser={user}
-                  />
-                </div>
-              );
-            })}
-          </>
+          conversations.map((conversation) => (
+            <Conversation key={conversation._id} conversation={conversation} currentUser={user} />
+          ))
         )}
       </div>
+      <AiOutlineHome size="32px" className="home-icon" onClick={handleBackToHome} />
     </section>
   );
 };

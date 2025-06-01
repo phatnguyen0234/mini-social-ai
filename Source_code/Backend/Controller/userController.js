@@ -118,10 +118,9 @@ const userController = {
   //SEARCH FOR USERS
   searchAllUser: async (req, res) => {
     try {
-      const username = req.query.username;
-      const user = await User.find({ username: { $regex: username } })
+      const username = req.query.username;      const user = await User.find({ username: { $regex: username } })
         .limit(2)
-        .select("username profilePicture theme")
+        .select("username profilePicture theme createdAt")
         .exec();
       return res.status(200).json(user);
     } catch (err) {
@@ -142,13 +141,12 @@ const userController = {
   createBot: async (req, res) => {
     try {
       const bot = new User({
-        _id: "gemini_bot", // ID duy nhất cho chatbot
+        _id: "gemini_bot", // Unique ID for chatbot
         name: "Gemini Bot",
-        password: "somehashedpassword",  // <-- thêm password (có thể hash nhẹ nhàng hoặc để đơn giản)
+        password: "somehashedpassword",  // Add password (can be lightly hashed or kept simple)
         name: "Gemini Bot",
-      //email: "gemini@chatbot.com",
         email: "gemini@chatbot.com",
-        isBot: true, // Đánh dấu đây là bot
+        isBot: true, // Mark as bot
       });
   
       const savedBot = await bot.save();
@@ -160,23 +158,5 @@ const userController = {
   },
 };
 
-// const createBot = async (req, res) => {
-//   try {
-//     const bot = new User({
-//       _id: "gemini_bot", // ID duy nhất cho chatbot
-//       name: "Gemini Bot",
-//       email: "gemini@chatbot.com",
-//       isBot: true, // Đánh dấu đây là bot
-//     });
-
-//     const savedBot = await bot.save();
-//     res.status(201).json(savedBot);
-//   } catch (err) {
-//     console.error("Error creating bot:", err);
-//     res.status(500).json({ error: "Failed to create bot" });
-//   }
-// };
-
-//module.exports = { createBot };
 
 module.exports = userController;

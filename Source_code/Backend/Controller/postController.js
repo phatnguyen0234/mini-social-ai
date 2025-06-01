@@ -7,10 +7,14 @@ const postController = {
   createPost: async (req, res) => {
     try {
       const users = await User.findById(req.body.userId);
-      if (req.body.imageUrl) {
-        const result = await cloudinary.uploader.upload(req.body.imageUrl, {
-          upload_preset: "post_image",
+      
+      if (req.file) {
+        // Upload file to cloudinary
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "post_images",
+          resource_type: "auto",
         });
+
         const makePost = {
           ...req.body,
           imageUrl: result.secure_url,
@@ -34,7 +38,8 @@ const postController = {
         return res.status(200).json(savedPost);
       }
     } catch (err) {
-      res.status(500).json(err);
+      console.error("Error creating post:", err);
+      res.status(500).json({error: err.message});
     }
   },
 
@@ -81,13 +86,15 @@ const postController = {
   getFriendsPost: async (req, res) => {
     try {
       const currentUser = await User.findById(req.body.userId);
-      const userPost = await Post.find({ userId: req.body.userId });
+      // Chỉ lấy bài viết từ những người mà user đang follow
       const friendPost = await Promise.all(
         currentUser.followings.map((friendId) => {
           return Post.find({ userId: friendId });
         })
       );
-      res.status(200).json(userPost.concat(...friendPost));
+      // Gộp tất cả bài viết của bạn bè thành một mảng phẳng
+      const allFriendPosts = [].concat(...friendPost);
+      res.status(200).json(allFriendPosts);
     } catch (err) {
       res.status(500).json(err);
     }
@@ -112,77 +119,56 @@ const postController = {
     }
   },
 
-  //UPVOTE A POST
+  //LIKE A POST
   upvotePost: async (req, res) => {
     try {
       const post = await Post.findById(req.params.id.trim());
-      if (
-        !post.upvotes.includes(req.body.userId) &&
-        post.downvotes.includes(req.body.userId)
-      ) {
-        await post.updateOne({ $push: { upvotes: req.body.userId } });
-        await post.updateOne({ $pull: { downvotes: req.body.userId } });
-        await User.findOneAndUpdate(
-          { _id: post.userId },
-          { $inc: { karmas: 10 } }
-        );
-        return res.status(200).json("Post is upvoted!");
-      } else if (
-        !post.upvotes.includes(req.body.userId) &&
-        !post.downvotes.includes(req.body.userId)
-      ) {
+      
+      // Nếu chưa like, thêm like
+      if (!post.upvotes.includes(req.body.userId)) {
         await post.updateOne({ $push: { upvotes: req.body.userId } });
         await User.findOneAndUpdate(
           { _id: post.userId },
           { $inc: { karmas: 10 } }
         );
-        return res.status(200).json("Post is upvoted!");
-      } else if (post.upvotes.includes(req.body.userId)) {
+        return res.status(200).json("Post is liked!");
+      } 
+      // Nếu đã like, bỏ like
+      else {
         await post.updateOne({ $pull: { upvotes: req.body.userId } });
         await User.findOneAndUpdate(
           { _id: post.userId },
           { $inc: { karmas: -10 } }
         );
-        return res.status(200).json("Post is no longer upvoted!");
+        return res.status(200).json("Post is no longer liked!");
       }
     } catch (err) {
       return res.status(500).json(err);
     }
   },
 
-  //DOWNVOTE POST
+  //DISLIKE POST
   downvotePost: async (req, res) => {
     try {
       const post = await Post.findById(req.params.id.trim());
-      if (
-        !post.downvotes.includes(req.body.userId) &&
-        post.upvotes.includes(req.body.userId)
-      ) {
-        await post.updateOne({ $push: { downvotes: req.body.userId } });
-        await post.updateOne({ $pull: { upvotes: req.body.userId } });
-        //POST OWNER LOSES KARMAS FROM THE DOWNVOTES
-        await User.findOneAndUpdate(
-          { _id: post.userId },
-          { $inc: { karmas: -10 } }
-        );
-        return res.status(200).json("Post is downvoted!");
-      } else if (
-        !post.downvotes.includes(req.body.userId) &&
-        !post.upvotes.includes(req.body.userId)
-      ) {
+      
+      // Nếu chưa dislike, thêm dislike
+      if (!post.downvotes.includes(req.body.userId)) {
         await post.updateOne({ $push: { downvotes: req.body.userId } });
         await User.findOneAndUpdate(
           { _id: post.userId },
-          { $inc: { karmas: -10 } }
+          { $inc: { karmas: -5 } }
         );
-        return res.status(200).json("Post is downvoted!");
-      } else if (post.downvotes.includes(req.body.userId)) {
+        return res.status(200).json("Post is disliked!");
+      }
+      // Nếu đã dislike, bỏ dislike 
+      else {
         await post.updateOne({ $pull: { downvotes: req.body.userId } });
         await User.findOneAndUpdate(
           { _id: post.userId },
-          { $inc: { karmas: 10 } }
+          { $inc: { karmas: 5 } }
         );
-        return res.status(200).json("Post is no longer downvoted!");
+        return res.status(200).json("Post is no longer disliked!");
       }
     } catch (err) {
       return res.status(500).json(err);

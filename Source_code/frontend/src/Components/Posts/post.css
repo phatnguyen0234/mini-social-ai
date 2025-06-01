@@ -214,7 +214,19 @@ f.comments-interact > form {
 .post-image {
   margin-top: 1rem;
   max-width: 100%;
-  object-fit: contain;
+  max-height: 600px; /* Giới hạn chiều cao tối đa */
+  width: 100%;
+  object-fit: cover; /* Đảm bảo ảnh lấp đầy không gian được cấp mà không bị méo */
+  border-radius: 8px; /* Thêm bo góc cho đẹp */
+}
+
+.post-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-height: 600px;
+  overflow: hidden;
+  border-radius: 8px;
 }
 
 .search-bar {
@@ -223,4 +235,22 @@ f.comments-interact > form {
   font-size: 1rem;
   max-width: 100%;
   align-self: center;
+}
+.post-vote {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.like, .dislike {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.vote-count {
+  font-size: 14px;
+  min-width: 20px;
+  text-align: center;
 }

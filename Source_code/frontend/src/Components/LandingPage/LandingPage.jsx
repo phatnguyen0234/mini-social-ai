@@ -2,12 +2,11 @@ import "./landing.css";
 import phoneMockup from "../../assets/phone.png";
 import { useNavigate } from "react-router-dom";
 const LandingPage = () => {
-  const navigate = useNavigate();
-  const goToSignIn = () => {
-    navigate("/login");
+  const navigate = useNavigate();  const goToSignIn = () => {
+    navigate("/login", { replace: true });
   };
   const goToSignUp = () => {
-    navigate("/register");
+    navigate("/register", { replace: true });
   };
   return (
     <section className="landing-container">

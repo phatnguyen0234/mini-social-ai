@@ -1,4 +1,4 @@
-import { BiCommentDetail, BiUpvote, BiDownvote } from "react-icons/bi";
+import { BiCommentDetail, BiLike, BiDislike } from "react-icons/bi";
 import { BsTrash } from "react-icons/bs";
 import { format } from "timeago.js";
 import { MdSend } from "react-icons/md";
@@ -15,25 +15,52 @@ import {
 } from "../../redux/apiRequests";
 import Comments from "../Comments/Comments";
 import InputField from "../InputFields/Input";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { listContainer } from "../../utils/listContainer";
-import { useEffect } from "react";
 
 const Posts = React.forwardRef((props, ref) => {
   const { post, comments, setDeleteComment, deleteComment } = props;
   const navigate = useNavigate();
   const [comment, setComment] = useState("");
   const user = useSelector((state) => state.user.user?.currentUser);
-  const [totalVotes, setTotal] = useState(
-    post?.upvotes?.length - post?.downvotes?.length
-  );
-  const [isUpVote, setUpVote] = useState(post?.upvotes?.includes(user?._id));
-  const [isDownVote, setDownVote] = useState(
-    post?.downvotes?.includes(user?._id)
-  );
+  const [totalLikes, setTotalLikes] = useState(post?.upvotes?.length || 0);
+  const [totalDislikes, setTotalDislikes] = useState(post?.downvotes?.length || 0);
+  const [commentCount, setCommentCount] = useState(post?.comments || 0);
+  const [isUpVote, setUpVote] = useState(false);
+  const [isDownVote, setDownVote] = useState(false);
   const fullPost = useSelector((state) => state.nav.fullPost);
   const tags = listContainer.tags;
   const dispatch = useDispatch();
+
+  // Reset and update states when post changes
+  useEffect(() => {
+    if (post) {
+      setTotalLikes(post.upvotes?.length || 0);
+      setTotalDislikes(post.downvotes?.length || 0);
+      setCommentCount(post.comments || 0);
+    }
+  }, [post]);
+
+  // Cập nhật trạng thái like/dislike khi user thay đổi
+  useEffect(() => {
+    if (user && post) {
+      setUpVote(post.upvotes?.includes(user._id) || false);
+      setDownVote(post.downvotes?.includes(user._id) || false);
+    } else {
+      setUpVote(false);
+      setDownVote(false);
+    }
+  }, [user, post]);
+
+  // Update comment count when comments array changes
+  useEffect(() => {
+    if (comments) {
+      // Only update if in full post view to avoid overwriting the database count
+      if (fullPost?.postId === post?._id) {
+        setCommentCount(comments.length);
+      }
+    }
+  }, [comments, fullPost?.postId, post?._id]);
 
   const handleDelete = (id) => {
     dispatch(
@@ -56,38 +83,82 @@ const Posts = React.forwardRef((props, ref) => {
       open: false,
     };
     dispatch(fullPostToggle(closePost));
-  };
-  const handleUpVote = (id) => {
+  };  const handleUpVote = async (id) => {
+    if (!user?._id) return;
+    
     const userId = {
-      userId: user?._id,
+      userId: user._id,
     };
-    setTotal(
-      isUpVote ? totalVotes - 1 : isDownVote ? totalVotes + 2 : totalVotes + 1
-    );
-    setUpVote(isUpVote ? false : true);
-    setDownVote(false);
-    upvotePost(dispatch, user?.accessToken, id, userId);
-  };
-  const handleDownVote = (id) => {
+    
+    try {
+      // Gọi API trước để đảm bảo thành công
+      await upvotePost(dispatch, user?.accessToken, id, userId);
+      
+      // Sau khi API thành công mới cập nhật UI
+      if (isUpVote) {
+        setTotalLikes(prev => prev - 1);
+        setUpVote(false);
+      } else if (isDownVote) {
+        setTotalLikes(prev => prev + 1);
+        setTotalDislikes(prev => prev - 1);
+        setUpVote(true);
+        setDownVote(false);
+      } else {
+        setTotalLikes(prev => prev + 1);
+        setUpVote(true);
+      }
+    } catch (error) {
+      console.error("Error handling upvote:", error);
+    }
+  };  const handleDownVote = async (id) => {
+    if (!user?._id) return;
+    
     const userId = {
-      userId: user?._id,
+      userId: user._id,
     };
-    setTotal(
-      isDownVote ? totalVotes + 1 : isUpVote ? totalVotes - 2 : totalVotes - 1
-    );
-    setDownVote(isDownVote ? false : true);
-    setUpVote(false);
-    downvotePost(dispatch, user?.accessToken, id, userId);
+    
+    try {
+      // Gọi API trước để đảm bảo thành công
+      await downvotePost(dispatch, user?.accessToken, id, userId);
+      
+      // Sau khi API thành công mới cập nhật UI
+      if (isDownVote) {
+        setTotalDislikes(prev => prev - 1);
+        setDownVote(false);
+      } else if (isUpVote) {
+        setTotalDislikes(prev => prev + 1);
+        setTotalLikes(prev => prev - 1);
+        setDownVote(true);
+        setUpVote(false);
+      } else {
+        setTotalDislikes(prev => prev + 1);
+        setDownVote(true);
+      }
+    } catch (error) {
+      console.error("Error handling downvote:", error);
+    }
   };
 
-  const handleComment = (event, id) => {
+  const handleComment = async (event, id) => {
     event.preventDefault();
+    if (!comment.trim()) return; // Don't submit empty comments
+
     const newComment = {
       content: comment,
       ownerId: user?._id,
     };
-    setComment("");
-    addComment(dispatch, user?.accessToken, id, newComment);
+
+    try {
+      await addComment(dispatch, user?.accessToken, id, newComment);
+      setComment(""); // Clear input field
+      setCommentCount(prev => prev + 1); // Increment comment count immediately
+    } catch (error) {
+      console.error("Error adding comment:", error);
+    }
+  };
+
+  const handleCommentDeleted = () => {
+    setCommentCount(prev => prev - 1);
   };
 
   return (
@@ -158,28 +229,21 @@ const Posts = React.forwardRef((props, ref) => {
       </div>
       <div className="post-interactions">
         <div className="post-vote">
-          <div className="upvote">
-            {isUpVote ? (
-              <BiUpvote
-                size={"24px"}
-                color="#ff9051"
-                onClick={() => handleUpVote(post?._id)}
-              />
-            ) : (
-              <BiUpvote
-                size={"24px"}
-                color=""
-                onClick={() => handleUpVote(post?._id)}
-              />
-            )}
-          </div>
-          <div className="votes">{totalVotes}</div>
-          <div className="downvote">
-            <BiDownvote
+          <div className="like">
+            <BiLike
               size={"24px"}
-              color={`${isDownVote ? "rgb(146, 0, 214)" : ""}`}
+              color={isUpVote ? "#4287f5" : ""}
+              onClick={() => handleUpVote(post?._id)}
+            />
+            <span className="vote-count">{totalLikes}</span>
+          </div>
+          <div className="dislike">
+            <BiDislike
+              size={"24px"}
+              color={isDownVote ? "#f54242" : ""}
               onClick={() => handleDownVote(post?._id)}
             />
+            <span className="vote-count">{totalDislikes}</span>
           </div>
           <div className="comments">
             <BiCommentDetail
@@ -187,7 +251,7 @@ const Posts = React.forwardRef((props, ref) => {
               onClick={() => handleReadmore(post?._id)}
             />
           </div>
-          <div className="comment-no"> {post?.comments} </div>
+          <div className="comment-no"> {commentCount} </div>
         </div>
         {fullPost?.postId === post?._id && (
           <div className="comments-opened">
@@ -207,6 +271,7 @@ const Posts = React.forwardRef((props, ref) => {
                   createdAt={comment.createdAt}
                   updatedAt={comment.updatedAt}
                   content={comment.content}
+                  onCommentDeleted={handleCommentDeleted}
                 />
               );
             })}

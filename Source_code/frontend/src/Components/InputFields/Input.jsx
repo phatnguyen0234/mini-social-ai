@@ -2,20 +2,20 @@ import "../Edit/edit.css";
 import "../Posts/post.css";
 import "./inputfield.css";
 import "../ChatOverview/chatroom.css";
+
 const InputField = (props) => {
   const {
-    errorMsg,
     id,
     name,
     value,
     placeholder,
     inputType,
     type,
-    data,
     setData,
     label,
     classStyle,
   } = props;
+  
   return (
     <>
       <label> {label} </label>
